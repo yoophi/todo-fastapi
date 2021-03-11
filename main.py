@@ -1,38 +1,66 @@
-from typing import Optional
+from typing import Optional, List
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from database import SessionLocal
+from models import Todo as TodoModel
+from schema import Todo, TodoCreate
 
 app = FastAPI()
 
 
-class Todo(BaseModel):
-    id: int
-    title: str
-    completed: bool
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
-@app.get('/')
+@app.get("/")
 def index():
     return "Hello, World!"
 
 
-@app.get("/todos/{todo_id}")
-def todo_detail(todo_id: int, ):
-    return {"todo_id": todo_id, }
+@app.get("/todos/{todo_id}", response_model=Todo)
+def todo_detail(todo_id: int, db: Session = Depends(get_db)):
+    todo = db.query(TodoModel).get(todo_id)
+    if not todo:
+        raise HTTPException(status_code=404, detail=f"Todo:{todo_id} not found")
+
+    return todo
 
 
-@app.put("/todos/{todo_id}")
-def todo_update(todo_id: int, todo: Todo):
-    return {"name": todo.title, "todo_id": todo_id}
+@app.put("/todos/{todo_id}", response_model=Todo)
+def todo_update(todo_id: int, todo_in: TodoCreate, db: Session = Depends(get_db)):
+    todo = db.query(TodoModel).get(todo_id)
+    if not todo:
+        raise HTTPException(status_code=404, detail=f"Todo:{todo_id} not found")
+
+    todo.title = todo_in.title
+    todo.completed = todo_in.completed
+    db.add(todo)
+    db.commit()
+    db.refresh(todo)
+
+    return todo
 
 
-@app.get("/todos")
-def todo_list(limit: Optional[int] = None):
-    return {"success": True}
+@app.get("/todos", response_model=List[Todo])
+def todo_list(limit: Optional[int] = None, db: Session = Depends(get_db)):
+    todos = db.query(TodoModel).all()
+    return todos
 
 
-@app.post("/todos")
-def todo_add(item: Todo):
-    print(item)
-    return {"success": True}
+@app.post("/todos", response_model=Todo)
+def todo_add(item: TodoCreate, db: Session = Depends(get_db)):
+    todo = TodoModel(
+        title=item.title,
+        completed=item.completed,
+    )
+    db.add(todo)
+    db.commit()
+    db.refresh(todo)
+
+    return todo

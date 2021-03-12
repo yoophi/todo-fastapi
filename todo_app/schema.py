@@ -1,9 +1,10 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class TodoBase(BaseModel):
     title: str
-    completed: bool
 
 
 class TodoCreate(TodoBase):
@@ -12,6 +13,7 @@ class TodoCreate(TodoBase):
 
 class Todo(TodoBase):
     id: int
+    completed = bool
 
     class Config:
         orm_mode = True

@@ -1,4 +1,4 @@
-from todo_app import SessionLocal
+from todo_app.database import SessionLocal
 
 
 def get_db():

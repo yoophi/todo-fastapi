@@ -3,9 +3,9 @@ from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import SessionLocal
-from models import Todo as TodoModel
-from schema import Todo, TodoCreate
+from todo_app.database import SessionLocal
+from todo_app.models import Todo as TodoModel
+from todo_app.schema import Todo, TodoCreate
 
 app = FastAPI()
 

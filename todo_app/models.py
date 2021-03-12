@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean
 
-from database import Base
+from todo_app.database import Base
 
 
 class Todo(Base):

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from tests.request_objects import InvalidRequestObject
+from todo_app.request_objects import InvalidRequestObject
 
 
 @dataclass
@@ -13,4 +13,6 @@ class TodoDetailRequestObject:
         if todo_id < 1:
             return invalid_request_object
 
-        return cls(todo_id=todo_id, )
+        return cls(
+            todo_id=todo_id,
+        )

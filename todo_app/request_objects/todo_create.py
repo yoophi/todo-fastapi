@@ -1,21 +1,24 @@
 from dataclasses import dataclass
 
-from tests.request_objects import InvalidRequestObject
+from todo_app.request_objects import InvalidRequestObject
 
 
 @dataclass
 class TodoCreateRequestObject:
     title: str
-    completed: bool = False
 
     @classmethod
-    def factory(cls, title: str, ):
-        invalid_ro = InvalidRequestObject()
+    def factory(
+        cls,
+        title: str,
+    ):
+        invalid_request_object = InvalidRequestObject()
+
         try:
             title = title.strip()
             if not title:
-                return invalid_ro
+                return invalid_request_object
 
-            return cls(title=title, completed=False)
-        finally:
-            return invalid_ro
+            return cls(title=title)
+        except Exception as e:
+            return invalid_request_object

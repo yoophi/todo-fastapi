@@ -2,13 +2,13 @@ from typing import Optional, List
 
 from fastapi import APIRouter
 from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
 
+from todo_app.repositories.interface import IRepository
 from todo_app.request_objects.todo_create import TodoCreateRequestObject
 from todo_app.request_objects.todo_detail import TodoDetailRequestObject
 from todo_app.request_objects.todo_list import TodoListRequestObject
 from todo_app.request_objects.todo_update import TodoUpdateRequestObject
-from todo_app.rest.utils import get_db
+from todo_app.rest.utils import get_repository
 from todo_app.schema import Todo, TodoCreate
 from todo_app.use_cases.todo_create import TodoCreateUseCase
 from todo_app.use_cases.todo_detail import TodoDetailUseCase
@@ -19,48 +19,59 @@ router = APIRouter(prefix="/todos")
 
 
 @router.get("/{todo_id}", response_model=Todo)
-def todo_detail(todo_id: int, db: Session = Depends(get_db)):
+def todo_detail(todo_id: int, repository: IRepository = Depends(get_repository)):
     request_object = TodoDetailRequestObject.factory(todo_id=todo_id)
 
-    uc = TodoDetailUseCase()
-    response = uc.execute(request_object, db)
+    uc = TodoDetailUseCase(repository)
+    response = uc.execute(request_object)
 
     if not response:
         raise HTTPException(status_code=404, detail=response.message)
 
-    return response.value
+    todo = response.value
+    return Todo(
+        id=todo.id,
+        title=todo.title,
+        completed=todo.completed,
+    )
 
 
 @router.put("/{todo_id}", response_model=Todo)
-def todo_update(todo_id: int, todo_in: TodoCreate, db: Session = Depends(get_db)):
+def todo_update(todo_id: int, todo_in: TodoCreate, repository: IRepository = Depends(get_repository), ):
     request_objet = TodoUpdateRequestObject.factory(todo_id=todo_id, **todo_in.dict())
 
-    uc = TodoUpdateUseCase()
-    response = uc.execute(request_objet, db)
+    uc = TodoUpdateUseCase(repository)
+    response = uc.execute(request_objet)
     if not response:
         raise HTTPException(status_code=404, detail=response.message)
 
-    return response.value
+    todo = response.value
+    return Todo(
+        id=todo.id,
+        title=todo.title,
+        completed=todo.completed,
+    )
 
 
 @router.get("/", response_model=List[Todo])
-def todo_list(limit: Optional[int] = None, db: Session = Depends(get_db)):
+def todo_list(limit: Optional[int] = 10, repository: IRepository = Depends(get_repository)):
     request_object = TodoListRequestObject.factory(limit=limit)
 
-    uc = TodoListUseCase()
-    response = uc.execute(request_object, db)
-    return response.value
+    uc = TodoListUseCase(repository)
+    response = uc.execute(request_object)
+    return [
+        Todo(id=item.id, title=item.title, completed=item.completed)
+        for item in response.value
+    ]
 
 
 @router.post("/", response_model=Todo)
-def todo_add(item: TodoCreate, db: Session = Depends(get_db)):
-    print("=== item ===")
-    print(item)
+def todo_add(item: TodoCreate, repository: IRepository = Depends(get_repository)):
     request_object = TodoCreateRequestObject.factory(title=item.title)
-    print("type(request_object)", type(request_object))
-    print("request_object", request_object)
 
-    uc = TodoCreateUseCase()
-    response = uc.execute(request_object, db)
+    uc = TodoCreateUseCase(repository)
+    response = uc.execute(request_object)
 
-    return response.value
+    todo = response.value
+
+    return Todo(id=todo.id, title=todo.title, completed=todo.completed)

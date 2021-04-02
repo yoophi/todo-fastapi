@@ -13,7 +13,7 @@ class TodoCreate(TodoBase):
 
 class Todo(TodoBase):
     id: int
-    completed = bool
+    completed: bool
 
     class Config:
         orm_mode = True

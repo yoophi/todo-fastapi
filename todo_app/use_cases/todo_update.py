@@ -1,23 +1,24 @@
-from todo_app.models import Todo as TodoModel
+from todo_app.repositories.interface import IRepository
+from todo_app.repositories.sqla.models import Todo as TodoModel
 from todo_app.response_objects import ResponseFailure, ResponseSuccess
 from todo_app.request_objects.todo_update import TodoUpdateRequestObject
 
 
 class TodoUpdateUseCase:
-    def execute(self, request_objet: TodoUpdateRequestObject, db):
-        todo = db.query(TodoModel).get(request_objet.todo_id)
-        if not todo:
+    repo: IRepository
+
+    def __init__(self, repository: IRepository):
+        self.repo = repository
+
+    def execute(self, request_objet: TodoUpdateRequestObject):
+        todo_id = request_objet.todo_id
+        title = request_objet.title
+        completed = request_objet.completed
+
+        todo = self.repo.update_todo(todo_id, title, completed)
+        if todo is None:
             return ResponseFailure.build_resource_error(
-                message=f"Todo:{request_objet.todo_id} not found"
+                message=f"Todo:{todo_id} not found"
             )
-
-        if request_objet.title is not None:
-            todo.title = request_objet.title
-        if request_objet.completed is not None:
-            todo.completed = request_objet.completed
-
-        db.add(todo)
-        db.commit()
-        db.refresh(todo)
 
         return ResponseSuccess(value=todo)

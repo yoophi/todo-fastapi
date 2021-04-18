@@ -17,20 +17,20 @@ class SqlaRepository(IRepository):
             db_host = connection_data.get("host")
             db_port = connection_data.get("port")
             db_database = connection_data.get("database")
-            dsn = (
-                f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_database}"
-            )
+            dsn = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_database}"
             self.engine = create_engine(dsn)
             Base.metadata.bind = self.engine
 
     @property
     def session_context(self):
         if self.db:
+
             @contextmanager
             def session_scope():
                 yield self.db.session
 
         else:
+
             @contextmanager
             def session_scope():
                 session_local = sessionmaker(bind=self.engine)
@@ -55,7 +55,6 @@ class SqlaRepository(IRepository):
                 return None
 
         return todo.to_entity()
-
 
     def create_todo(self, title):
         with self.session_context() as session:

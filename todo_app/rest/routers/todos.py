@@ -37,7 +37,11 @@ def todo_detail(todo_id: int, repository: IRepository = Depends(get_repository))
 
 
 @router.put("/{todo_id}", response_model=Todo)
-def todo_update(todo_id: int, todo_in: TodoCreate, repository: IRepository = Depends(get_repository), ):
+def todo_update(
+    todo_id: int,
+    todo_in: TodoCreate,
+    repository: IRepository = Depends(get_repository),
+):
     request_objet = TodoUpdateRequestObject.factory(todo_id=todo_id, **todo_in.dict())
 
     uc = TodoUpdateUseCase(repository)
@@ -54,7 +58,9 @@ def todo_update(todo_id: int, todo_in: TodoCreate, repository: IRepository = Dep
 
 
 @router.get("/", response_model=List[Todo])
-def todo_list(limit: Optional[int] = 10, repository: IRepository = Depends(get_repository)):
+def todo_list(
+    limit: Optional[int] = 10, repository: IRepository = Depends(get_repository)
+):
     request_object = TodoListRequestObject.factory(limit=limit)
 
     uc = TodoListUseCase(repository)

@@ -6,11 +6,11 @@ from pydantic import BaseSettings
 
 class SettingsInterface(BaseSettings):
     debug: bool = True
-    db_user: str = 'user'
-    db_password: str = 'secret'
-    db_host: str = 'localhost'
+    db_user: str = "user"
+    db_password: str = "secret"
+    db_host: str = "localhost"
     db_port: int = 3306
-    db_database: str = 'todos'
+    db_database: str = "todos"
 
 
 class DevelopmentSettings(SettingsInterface):
@@ -23,7 +23,7 @@ class ProductionSettings(SettingsInterface):
 
 @lru_cache()
 def get_settings():
-    config = os.environ.get('FAST_API_CONFIG', 'default')
+    config = os.environ.get("FAST_API_CONFIG", "default")
     configs = {
         "development": DevelopmentSettings,
         "production": ProductionSettings,

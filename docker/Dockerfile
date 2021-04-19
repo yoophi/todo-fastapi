@@ -12,17 +12,22 @@ ENV PYTHONFAULTHANDLER=1 \
   CRYPTOGRAPHY_DONT_BUILD_RUST=1 \
   POETRY_VERSION=1.1.5
 
+RUN apk add python3-dev 
+
 FROM base as builder 
 
-RUN apk add --no-cache gcc libffi-dev musl-dev openssl-dev
+RUN apk add --no-cache gcc g++ libffi-dev musl-dev openssl-dev
 
 # install poetry
-RUN pip install "poetry==$POETRY_VERSION"
+RUN pip install --upgrade pip wheel && \
+    pip install "poetry==$POETRY_VERSION"
+
 RUN python -m venv /venv
 
 # install dependencies
 COPY poetry.lock pyproject.toml ./
 COPY todo_app                   ./todo_app
+
 RUN . /venv/bin/activate && poetry install --no-root --no-dev
 RUN . /venv/bin/activate && poetry build 
 

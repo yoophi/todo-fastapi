@@ -1,9 +1,12 @@
+import math
 from contextlib import contextmanager
+from typing import List, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from todo_app.repositories.interface import IRepository
+from todo_app.repositories.interface import IRepository, PaginationDto, PaginationFilterDto, PaginationSortDto, \
+    PaginationResponse
 from todo_app.repositories.sqla.base import Base
 from todo_app.repositories.sqla.models import Todo
 
@@ -47,6 +50,28 @@ class SqlaRepository(IRepository):
             todos = session.query(Todo).limit(limit).all()
 
         return [todo.to_entity() for todo in todos]
+
+    def get_todo_paginate(
+            self,
+            pagination: PaginationDto,
+    ):
+        page = pagination.page
+        per_page = pagination.per_page
+        offset = (page - 1) * per_page
+
+        with self.session_context() as session:
+            query = session.query(Todo)
+            total = query.count()
+            total_page = math.ceil(total / per_page)
+            todos = query.limit(per_page).offset(offset)
+            pagination = PaginationResponse(
+                page=page,
+                per_page=per_page,
+                total=total,
+                total_page=total_page,
+            )
+
+        return [todo.to_entity() for todo in todos], pagination
 
     def get_todo(self, todo_id):
         with self.session_context() as session:

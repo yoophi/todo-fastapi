@@ -10,6 +10,18 @@ class PaginationDto:
 
 
 @dataclass
+class PaginationResponse:
+    page: int
+    per_page: int
+    total: int
+    total_page: int
+
+    @property
+    def has_next(self):
+        return self.total_page > self.page
+
+
+@dataclass
 class PaginationFilterDto:
     key: str
     value: str
@@ -28,10 +40,8 @@ class IRepository(metaclass=ABCMeta):
 
     @abstractmethod
     def get_todo_paginate(
-        self,
-        pagination: PaginationDto,
-        filters: List[PaginationFilterDto],
-        sort: Optional[PaginationSortDto] = None,
+            self,
+            pagination: PaginationDto,
     ):
         pass
 

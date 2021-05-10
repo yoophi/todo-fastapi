@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, List
 
 
 @dataclass
@@ -35,28 +34,28 @@ class PaginationSortDto:
 
 class IRepository(metaclass=ABCMeta):
     @abstractmethod
-    def get_todo_list(self, limit=10):
+    def list(self, limit=10):
         pass
 
     @abstractmethod
-    def get_todo_paginate(
+    def paginate(
             self,
             pagination: PaginationDto,
     ):
         pass
 
     @abstractmethod
-    def get_todo(self, todo_id):
+    def get(self, id_):
         pass
 
     @abstractmethod
-    def create_todo(self, title):
+    def create(self, **kwargs):
         pass
 
     @abstractmethod
-    def update_todo(self, todo_id, title, completed):
+    def update(self, id_, **kwargs):
         pass
 
     @abstractmethod
-    def remove_todo(self):
+    def remove(self, id_):
         pass

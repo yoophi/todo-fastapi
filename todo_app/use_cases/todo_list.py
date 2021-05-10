@@ -18,6 +18,6 @@ class TodoPagenateUseCase:
             page=request_object.pagination.page,
             per_page=request_object.pagination.per_page,
         )
-        todos, pagination = self.repo.get_todo_paginate(pagination=pagination)
+        todos, pagination = self.repo.paginate(pagination=pagination)
 
         return ResponseSuccess(value=(todos, pagination))

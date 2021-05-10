@@ -16,7 +16,7 @@ class TodoCreateUseCase:
                 invalid_request_object=request_object
             )
 
-        todo = self.repo.create_todo(
+        todo = self.repo.create(
             title=request_object.title,
         )
 

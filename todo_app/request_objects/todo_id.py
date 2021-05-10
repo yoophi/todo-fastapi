@@ -4,7 +4,7 @@ from todo_app.request_objects import InvalidRequestObject
 
 
 @dataclass
-class TodoDetailRequestObject:
+class TodoIdRequestObject:
     todo_id: int
 
     @classmethod

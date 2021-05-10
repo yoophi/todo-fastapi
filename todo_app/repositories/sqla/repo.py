@@ -1,19 +1,19 @@
 import math
 from contextlib import contextmanager
-from typing import List, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from todo_app.repositories.interface import IRepository, PaginationDto, PaginationFilterDto, PaginationSortDto, \
-    PaginationResponse
+from todo_app.repositories.interface import IRepository, PaginationDto, PaginationResponse
 from todo_app.repositories.sqla.base import Base
 from todo_app.repositories.sqla.models import Todo
 
 
-class SqlaRepository(IRepository):
+class TodoSqlaRepository(IRepository):
     def __init__(self, db=None, connection_data=None):
         self.db = db
+        self.cls = Todo
+
         if db is None:
             db_user = connection_data.get("user")
             db_password = connection_data.get("password")
@@ -27,13 +27,11 @@ class SqlaRepository(IRepository):
     @property
     def session_context(self):
         if self.db:
-
             @contextmanager
             def session_scope():
                 yield self.db.session
 
         else:
-
             @contextmanager
             def session_scope():
                 session_local = sessionmaker(bind=self.engine)
@@ -45,13 +43,13 @@ class SqlaRepository(IRepository):
 
         return session_scope
 
-    def get_todo_list(self, limit=10):
+    def list(self, limit=10):
         with self.session_context() as session:
-            todos = session.query(Todo).limit(limit).all()
+            items = session.query(self.cls).limit(limit).all()
 
-        return [todo.to_entity() for todo in todos]
+        return [item.to_entity() for item in items]
 
-    def get_todo_paginate(
+    def paginate(
             self,
             pagination: PaginationDto,
     ):
@@ -60,10 +58,10 @@ class SqlaRepository(IRepository):
         offset = (page - 1) * per_page
 
         with self.session_context() as session:
-            query = session.query(Todo)
+            query = session.query(self.cls)
             total = query.count()
             total_page = math.ceil(total / per_page)
-            todos = query.limit(per_page).offset(offset)
+            items = query.limit(per_page).offset(offset)
             pagination = PaginationResponse(
                 page=page,
                 per_page=per_page,
@@ -71,44 +69,49 @@ class SqlaRepository(IRepository):
                 total_page=total_page,
             )
 
-        return [todo.to_entity() for todo in todos], pagination
+        return [item.to_entity() for item in items], pagination
 
-    def get_todo(self, todo_id):
+    def get(self, id_):
         with self.session_context() as session:
-            todo = session.query(Todo).get(todo_id)
-            if not todo:
+            item = session.query(self.cls).get(id_)
+            if not item:
                 return None
 
-        return todo.to_entity()
+        return item.to_entity()
 
-    def create_todo(self, title):
+    def create(self, **kwargs):
         with self.session_context() as session:
-            todo = Todo(
-                title=title,
-                completed=False,
-            )
-            session.add(todo)
+            data = dict(kwargs, completed=False)
+            item = self.cls(**data)
+            session.add(item)
             session.commit()
-            session.refresh(todo)
+            session.refresh(item)
 
-        return todo.to_entity()
+        return item.to_entity()
 
-    def update_todo(self, todo_id, title, completed):
+    def update(self, id_, **kwargs):
         with self.session_context() as session:
-            todo = session.query(Todo).get(todo_id)
-            if not todo:
+            item = session.query(self.cls).get(id_)
+            if not item:
                 return None
 
-            if title is not None:
-                todo.title = title
-            if completed is not None:
-                todo.completed = completed
+            if kwargs.get('title') is not None:
+                item.title = kwargs.get('title')
+            if kwargs.get('completed') is not None:
+                item.completed = kwargs.get('completed')
 
-            session.add(todo)
+            session.add(item)
             session.commit()
-            session.refresh(todo)
+            session.refresh(item)
 
-        return todo.to_entity()
+        return item.to_entity()
 
-    def remove_todo(self):
-        pass
+    def remove(self, id_):
+        with self.session_context() as session:
+            item = session.query(self.cls).get(id_)
+            if not item:
+                return False
+
+            session.delete(item)
+            session.commit()
+            return True

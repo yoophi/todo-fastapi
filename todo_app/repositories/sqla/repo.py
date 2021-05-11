@@ -1,16 +1,19 @@
+import math
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from todo_app.repositories.interface import IRepository
+from todo_app.repositories.interface import IRepository, PaginationDto, PaginationResponse
 from todo_app.repositories.sqla.base import Base
 from todo_app.repositories.sqla.models import Todo
 
 
-class SqlaRepository(IRepository):
+class TodoSqlaRepository(IRepository):
     def __init__(self, db=None, connection_data=None):
         self.db = db
+        self.cls = Todo
+
         if db is None:
             db_user = connection_data.get("user")
             db_password = connection_data.get("password")
@@ -24,13 +27,11 @@ class SqlaRepository(IRepository):
     @property
     def session_context(self):
         if self.db:
-
             @contextmanager
             def session_scope():
                 yield self.db.session
 
         else:
-
             @contextmanager
             def session_scope():
                 session_local = sessionmaker(bind=self.engine)
@@ -42,48 +43,75 @@ class SqlaRepository(IRepository):
 
         return session_scope
 
-    def get_todo_list(self, limit=10):
+    def list(self, limit=10):
         with self.session_context() as session:
-            todos = session.query(Todo).limit(limit).all()
+            items = session.query(self.cls).limit(limit).all()
 
-        return [todo.to_entity() for todo in todos]
+        return [item.to_entity() for item in items]
 
-    def get_todo(self, todo_id):
+    def paginate(
+            self,
+            pagination: PaginationDto,
+    ):
+        page = pagination.page
+        per_page = pagination.per_page
+        offset = (page - 1) * per_page
+
         with self.session_context() as session:
-            todo = session.query(Todo).get(todo_id)
-            if not todo:
-                return None
-
-        return todo.to_entity()
-
-    def create_todo(self, title):
-        with self.session_context() as session:
-            todo = Todo(
-                title=title,
-                completed=False,
+            query = session.query(self.cls)
+            total = query.count()
+            total_page = math.ceil(total / per_page)
+            items = query.limit(per_page).offset(offset)
+            pagination = PaginationResponse(
+                page=page,
+                per_page=per_page,
+                total=total,
+                total_page=total_page,
             )
-            session.add(todo)
-            session.commit()
-            session.refresh(todo)
 
-        return todo.to_entity()
+        return [item.to_entity() for item in items], pagination
 
-    def update_todo(self, todo_id, title, completed):
+    def get(self, id_):
         with self.session_context() as session:
-            todo = session.query(Todo).get(todo_id)
-            if not todo:
+            item = session.query(self.cls).get(id_)
+            if not item:
                 return None
 
-            if title is not None:
-                todo.title = title
-            if completed is not None:
-                todo.completed = completed
+        return item.to_entity()
 
-            session.add(todo)
+    def create(self, **kwargs):
+        with self.session_context() as session:
+            data = dict(kwargs, completed=False)
+            item = self.cls(**data)
+            session.add(item)
             session.commit()
-            session.refresh(todo)
+            session.refresh(item)
 
-        return todo.to_entity()
+        return item.to_entity()
 
-    def remove_todo(self):
-        pass
+    def update(self, id_, **kwargs):
+        with self.session_context() as session:
+            item = session.query(self.cls).get(id_)
+            if not item:
+                return None
+
+            if kwargs.get('title') is not None:
+                item.title = kwargs.get('title')
+            if kwargs.get('completed') is not None:
+                item.completed = kwargs.get('completed')
+
+            session.add(item)
+            session.commit()
+            session.refresh(item)
+
+        return item.to_entity()
+
+    def remove(self, id_):
+        with self.session_context() as session:
+            item = session.query(self.cls).get(id_)
+            if not item:
+                return False
+
+            session.delete(item)
+            session.commit()
+            return True

@@ -15,7 +15,7 @@ class TodoUpdateUseCase:
         title = request_objet.title
         completed = request_objet.completed
 
-        todo = self.repo.update_todo(todo_id, title, completed)
+        todo = self.repo.update(todo_id, title=title, completed=completed)
         if todo is None:
             return ResponseFailure.build_resource_error(
                 message=f"Todo:{todo_id} not found"

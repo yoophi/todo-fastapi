@@ -12,9 +12,6 @@ class TodoEntity:
         if adict is None:
             adict = kwargs
 
-        data = dict()
-        data["id"] = adict.get("id")
-        data["title"] = adict.get("title")
-        data["completed"] = adict.get("completed")
+        data = {key: adict.get(key) for key in ("id", "title", "completed")}
 
         return cls(**data)
